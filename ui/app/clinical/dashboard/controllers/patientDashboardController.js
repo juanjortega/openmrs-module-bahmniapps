@@ -4,7 +4,7 @@ angular.module('bahmni.clinical')
     .controller('PatientDashboardController', ['$scope', 'clinicalAppConfigService', 'clinicalDashboardConfig', 'printer',
         '$state', 'spinner', 'visitSummary', 'appService', '$stateParams', 'diseaseTemplateService', 'patientContext', '$location', '$filter',
         function ($scope, clinicalAppConfigService, clinicalDashboardConfig, printer,
-                  $state, spinner, visitSummary, appService, $stateParams, diseaseTemplateService, patientContext, $location, $filter) {
+            $state, spinner, visitSummary, appService, $stateParams, diseaseTemplateService, patientContext, $location, $filter) {
             $scope.patient = patientContext.patient;
             $scope.activeVisit = $scope.visitHistory.activeVisit;
             $scope.activeVisitData = {};
@@ -15,6 +15,23 @@ angular.module('bahmni.clinical')
             $scope.isDashboardPrinting = false;
             var programConfig = appService.getAppDescriptor().getConfigValue("program") || {};
             $state.discardChanges = false;
+
+            $scope.ipdDashboard = {
+                hostData: {
+                    patientId: $stateParams.patientUuid,
+                    forDate: new Date().toUTCString()
+                }
+            };
+
+            $scope.alergyData = {
+                name: 'Customised for me!!!'
+            };
+
+            $scope.alergyApi = {
+                callback: function () {
+                    alert("We have a full fledged problem");
+                }
+            };
 
             $scope.stateChange = function () {
                 return $state.current.name === 'patient.dashboard.show';

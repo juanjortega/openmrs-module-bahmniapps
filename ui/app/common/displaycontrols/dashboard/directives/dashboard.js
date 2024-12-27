@@ -1,12 +1,81 @@
 'use strict';
 
 angular.module('bahmni.common.displaycontrol.dashboard')
-
-    .directive('dashboard', [function () {
-        var controller = function ($scope, $filter) {
+    .directive('dashboard', ['appService', '$stateParams', '$bahmniCookieStore', 'configurations', 'encounterService', 'spinner', 'auditLogService', 'messagingService', '$state', '$translate', 'formPrintService', function (appService, $stateParams, $bahmniCookieStore, configurations, encounterService, spinner, auditLogService, messagingService, $state, $translate, formPrintService) {
+        var controller = function ($scope, $filter, $rootScope) {
             var init = function () {
                 $scope.dashboard = Bahmni.Common.DisplayControl.Dashboard.create($scope.config || {}, $filter);
             };
+            $scope.tabConfigName = $stateParams.tabConfigName || 'default';
+
+            var findFormV2ReactConfig = function (sections) {
+                if (!sections || sections.length === 0) {
+                    return null;
+                }
+                var section = Object.keys(sections).map(function (key) {
+                    return sections[key];
+                }).find(function (section) {
+                    return section.type === Bahmni.Common.Constants.formsV2ReactDisplayControlType;
+                });
+                return (section && section.dashboardConfig !== undefined && section.dashboardConfig !== null) ? section.dashboardConfig : null;
+            };
+
+            if ($scope.patient !== undefined) {
+                var dashboardConfig = findFormV2ReactConfig($scope.config.sections);
+                $scope.formData = {
+                    patientUuid: $scope.patient.uuid,
+                    patient: $scope.patient,
+                    encounterUuid: $scope.activeEncounterUuid,
+                    showEditForActiveEncounter: dashboardConfig && dashboardConfig.showEditForActiveEncounter || false,
+                    numberOfVisits: dashboardConfig && dashboardConfig.maximumNoOfVisits || undefined,
+                    hasNoHierarchy: $scope.hasNoHierarchy,
+                    currentUser: $rootScope.currentUser,
+                    consultationMapper: new Bahmni.ConsultationMapper(configurations.dosageFrequencyConfig(), configurations.dosageInstructionConfig(),
+                    configurations.consultationNoteConcept(), configurations.labOrderNotesConcept()),
+                    editErrorMessage: $translate.instant('CLINICAL_FORM_ERRORS_MESSAGE_KEY'),
+                    showPrintOption: (dashboardConfig && dashboardConfig.printing) ? true : false
+                };
+                $scope.formApi = {
+                    handleEditSave: function (encounter) {
+                        spinner.forPromise(encounterService.create(encounter).then(function (savedResponse) {
+                            var messageParams = {
+                                encounterUuid: savedResponse.data.encounterUuid,
+                                encounterType: savedResponse.data.encounterType
+                            };
+                            auditLogService.log($scope.patient.uuid, "EDIT_ENCOUNTER", messageParams, "MODULE_LABEL_CLINICAL_KEY");
+                            $rootScope.hasVisitedConsultation = false;
+                            $state.go($state.current, {}, {reload: true});
+                            messagingService.showMessage('info', "{{'CLINICAL_SAVE_SUCCESS_MESSAGE_KEY' | translate}}");
+                        }));
+                    },
+                    printForm: function (observations) {
+                        var printData = {};
+                        var mappedObservations = new Bahmni.Common.Obs.ObservationMapper().map(observations, {}, null, $translate);
+                        printData.bahmniObservations = new Bahmni.Common.DisplayControl.Observation.GroupingFunctions().groupByEncounterDate(mappedObservations);
+                        observations.forEach(function (obs) {
+                            if (obs.formFieldPath) {
+                                printData.title = obs.formFieldPath.split(".")[0];
+                                return;
+                            } else if (obs.groupMembers.length > 0 && obs.groupMembers[0].formFieldPath) {
+                                printData.title = obs.groupMembers[0].formFieldPath.split(".")[0];
+                                return;
+                            }
+                        });
+                        printData.patient = $scope.patient;
+                        printData.printConfig = dashboardConfig ? dashboardConfig.printing : {};
+                        printData.printConfig.header = printData.title;
+                        formPrintService.printForm(printData, observations[0].encounterUuid, $rootScope.facilityLocation);
+                    }
+                };
+                $scope.allergyData = {
+                    patient: $scope.patient,
+                    provider: $rootScope.currentProvider,
+                    activeVisit: $scope.visitHistory ? $scope.visitHistory.activeVisit : null,
+                    allergyControlConceptIdMap: appService.getAppDescriptor().getConfigValue("allergyControlConceptIdMap")
+                };
+                $scope.appService = appService;
+                $bahmniCookieStore.get(Bahmni.Common.Constants.locationCookieName);
+            }
 
             var checkDisplayType = function (sections, typeToCheck, index) {
                 return sections[index] && sections[index]['displayType'] && sections[index]['displayType'] === typeToCheck;
@@ -66,7 +135,8 @@ angular.module('bahmni.common.displaycontrol.dashboard')
                 visitHistory: "=",
                 activeVisitUuid: "=",
                 visitSummary: "=",
-                enrollment: "="
+                enrollment: "=",
+                activeEncounterUuid: "="
             }
         };
     }]);

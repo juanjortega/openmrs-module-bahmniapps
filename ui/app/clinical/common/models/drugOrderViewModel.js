@@ -426,8 +426,24 @@ Bahmni.Clinical.DrugOrderViewModel = function (config, proto, encounterDate) {
         }
     };
 
+    var setDurationUnitsBasedOnFrequency = function () {
+        if (inputOptionsConfig.autopopulateDurationBasedOnFrequency != undefined) {
+            inputOptionsConfig.autopopulateDurationBasedOnFrequency.forEach(function (frequency) {
+                if (frequency.frequencyName === self.uniformDosingType.frequency) {
+                    self.duration = frequency.duration;
+                    durationUnits.forEach(function (durationUnit) {
+                        if (durationUnit.name === frequency.durationUnit) {
+                            self.durationUnit = durationUnit.name;
+                        }
+                    });
+                }
+            });
+        }
+    };
+
     this.calculateQuantityAndUnit = function () {
         self.calculateDurationInDays();
+        setDurationUnitsBasedOnFrequency();
         if (!self.quantityEnteredManually && !self.quantityEnteredViaEdit) {
             if (self.frequencyType === Bahmni.Clinical.Constants.dosingTypes.uniform) {
                 var mantissa = self.uniformDosingType.doseFraction ? self.uniformDosingType.doseFraction.value : 0;
@@ -715,6 +731,7 @@ Bahmni.Clinical.DrugOrderViewModel.createFromContract = function (drugOrderRespo
     viewModel.creatorName = drugOrderResponse.creatorName;
     viewModel.action = drugOrderResponse.action;
     viewModel.concept = drugOrderResponse.concept;
+    viewModel.careSetting = drugOrderResponse.careSetting;
     viewModel.dateStopped = drugOrderResponse.dateStopped;
     viewModel.uuid = drugOrderResponse.uuid;
     viewModel.previousOrderUuid = drugOrderResponse.previousOrderUuid;

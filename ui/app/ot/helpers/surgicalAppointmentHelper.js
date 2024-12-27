@@ -3,6 +3,11 @@
 angular.module('bahmni.ot')
     .service('surgicalAppointmentHelper', [function () {
         this.filterProvidersByName = function (providerNames, providers) {
+            if (!providerNames || providerNames.length === 0) {
+                return _.filter(providers, function (provider) {
+                    return provider.person.display != "";
+                });
+            }
             var validProviderNames = _.filter(providerNames, function (providerName) {
                 return _.find(providers, function (provider) {
                     return providerName === provider.person.display;
@@ -91,7 +96,7 @@ angular.module('bahmni.ot')
                 ['notes', "OT_SURGICAL_APPOINTMENT_NOTES"], ['Status', "OT_SURGICAL_APPOINTMENT_STATUS"], ['Day', "OT_SURGICAL_BLOCK_START_DAY"],
                 ['Date', "OT_SURGICAL_BLOCK_START_DATE"], ['Identifier', "PATIENT_ATTRIBUTE_IDENTIFIER"],
                 ['Patient Name', "PATIENT_ATTRIBUTE_PATIENT_NAME"], ['Patient Age', "PERSON_ATTRIBUTE_PATIENT_AGE"],
-                ['Start Time', "OT_SURGICAL_BLOCK_START_TIME"], ['Est Time', "OT_SURGICAL_APPOINTMENT_EST_TIME"],
+                ['Start Time', "OT_SURGICAL_BLOCK_START_TIME"], ['Est Time', "OT_SURGICAL_APPOINTMENT_ESTIMATED_TIME"],
                 ['Actual Time', "OT_SURGICAL_APPOINTMENT_ACTUAL_TIME"], ['OT#', "OT_SURGICAL_BLOCK_LOCATION_NAME"],
                 ['Surgeon', "OT_PROVIDER_SURGEON"], ['Status Change Notes', "OT_SURGICAL_APPOINTMENT_STATUS_CHANGE_NOTES"],
                 ['Bed Location', "OT_SURGICAL_APPOINTMENT_BED_LOCATION"],

@@ -26,7 +26,7 @@ angular.module('authentication')
                 $window.location = "../home/index.html#/login";
             });
         });
-    }]).service('sessionService', ['$rootScope', '$http', '$q', '$bahmniCookieStore', 'userService', function ($rootScope, $http, $q, $bahmniCookieStore, userService) {
+    }]).service('sessionService', ['$rootScope', '$http', '$q', '$bahmniCookieStore', 'userService', '$window', function ($rootScope, $http, $q, $bahmniCookieStore, userService, $window) {
         var sessionResourcePath = Bahmni.Common.Constants.RESTWS_V1 + '/session?v=custom:(uuid)';
 
         var getAuthFromServer = function (username, password, otp) {
@@ -75,6 +75,12 @@ angular.module('authentication')
         var self = this;
 
         var destroySessionFromServer = function () {
+            if ($rootScope.cookieExpiryTime && $rootScope.cookieExpiryTime > 0) {
+                var currentTime = new Date();
+                var expiryTime = new Date(currentTime.getTime() + $rootScope.cookieExpiryTime * 60000);
+                var params = (decodeURIComponent($window.location.search.substring(1)));
+                $bahmniCookieStore.put($rootScope.currentProvider.uuid, $window.location.pathname + (params ? '?' + params : '') + $window.location.hash, {path: '/', expires: expiryTime});
+            }
             return $http.delete(sessionResourcePath);
         };
 
@@ -135,7 +141,10 @@ angular.module('authentication')
                     if (!_.isEmpty(providers.results) && hasAnyActiveProvider(providers.results)) {
                         $rootScope.currentUser = new Bahmni.Auth.User(data.results[0]);
                         $rootScope.currentUser.provider = providers.results[0];
-                        $rootScope.currentUser.currentLocation = null;
+                        var location = $bahmniCookieStore.get(Bahmni.Common.Constants.locationCookieName);
+                        if (location) {
+                            $rootScope.currentUser.currentLocation = location.name;
+                        }
                         $rootScope.$broadcast('event:user-credentialsLoaded', data.results[0]);
                         deferrable.resolve(data.results[0]);
                     } else {
@@ -218,18 +227,30 @@ angular.module('authentication')
         return {
             authenticateUser: authenticateUser
         };
-    }]).directive('logOut', ['sessionService', '$window', 'configurationService', 'auditLogService', function (sessionService, $window, configurationService, auditLogService) {
+    }]).directive('logOut', ['$rootScope', 'sessionService', '$window', 'configurationService', 'auditLogService', function ($rootScope, sessionService, $window, configurationService, auditLogService) {
+        function logoutUser () {
+            auditLogService.log(undefined, 'USER_LOGOUT_SUCCESS', undefined, 'MODULE_LABEL_LOGOUT_KEY').then(function () {
+                sessionService.destroy().then(function () {
+                    $window.location = "../home/index.html#/login";
+                });
+            });
+        }
+
+        function handleKeyPress (event) {
+            if ((event.metaKey || event.ctrlKey) && event.key === $rootScope.quickLogoutComboKey) {
+                logoutUser();
+            }
+        }
         return {
             link: function (scope, element) {
                 element.bind('click', function () {
                     scope.$apply(function () {
-                        auditLogService.log(undefined, 'USER_LOGOUT_SUCCESS', undefined, 'MODULE_LABEL_LOGOUT_KEY').then(function () {
-                            sessionService.destroy().then(
-                                function () {
-                                    $window.location = "../home/index.html#/login";
-                                });
-                        });
+                        logoutUser();
                     });
+                });
+                $window.addEventListener('keydown', handleKeyPress);
+                scope.$on('$destroy', function () {
+                    $window.removeEventListener('keydown', handleKeyPress);
                 });
             }
         };

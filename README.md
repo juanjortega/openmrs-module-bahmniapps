@@ -32,12 +32,18 @@ These steps need to performed ONLY the FIRST TIME you set up this code.
 4. Install Compass:
    - Compass compiles SASS/SCSS into CSS.
    - Requires ruby (It's recommended to install ruby also using rvm. See install [rvm with ruby](https://stackify.com/rvm-how-to-get-started-and-manage-your-ruby-installations/)).
-   - Ruby version: 2.6.6 
+   - Ruby version: 3.1
    - Once ruby is installed, you can install compass using: `gem install compass`
 
 ### Build commands
 
-**NOTE:** Run these commands from within the `ui` sub-folder.
+**NOTE:**
+Run these commands from within the `micro-frontends` sub-folder
+1. `yarn install`
+2. `yarn build`
+3. If build is successful, the `../ui/app/micro-frontends-dist` folder has the set of files which can be used by the angular modules for their build
+
+Run these commands from within the `ui` sub-folder.
 
 1. `yarn install`
 2. `yarn ci` (will internally trigger grunt)

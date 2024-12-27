@@ -15,26 +15,83 @@
   .calendar-location {
     padding-left: 80px;
     overflow: hidden;
-    float: left;
-    display: flex;
-    position: absolute;
-    z-index: 20;
     background: #fff;
     width: 94%;
+    float: left;
+    position: absolute;
+    z-index: 20;
     .heading-cell {
       width: 300px;
       box-sizing: border-box;
       text-align: center;
       float: left;
-      border-bottom: .5px solid lightgrey;
-      padding: 10px 0;
-      font-family: OpenSansSemiBold;
+      padding: 12px 0;
+      border-bottom: 1px solid #ddd;
+      border-top: 1px solid #ddd;
+      font-family: OpenSansSemiBold, serif;
+    }
+    hr{
+      margin-bottom: 0;
+    }
+  }
+  .day-heading{
+    position: absolute;
+    top: 55px;
+  }
+  .error{
+    color: #da1e28;
+    padding-top: 5px;
+    height: 15px;
+  }
+  .heading-ot-date{
+    font-size: 24px;
+  }
+  .heading-ot{
+    padding-bottom: 10px;
+  }
+  .heading-ot-block{
+    display: inline-block;
+    position: absolute;
+    left: 24px;
+  }
+  .notesTab{
+    width: calc(100% - 10px);
+    height: 30px;
+    color: #161616;
+    &:hover{
+      background-color: #EDF5FF;
+    }
+  }
+  .provider-location-name{
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: max-content;
+    margin-top: 15px;
+    overflow-x: scroll;
+  }
+  .notes-text{
+    background-color: #FCF4D6;
+    width: calc(100% - 10px);
+    color: #161616;
+    height: auto;
+    border: 1px solid #F1C21B;
+    border-left: 4px solid #F1C21B;
+    display: flex;
+    div{
+      display: inline-block;
+      width: calc(100% - 54px);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    > * {
+      padding: 8px;
     }
   }
   .calendar-time-container {
     clear: left;
     position: absolute;
-    top: 36px;
+    top: 94px;
     background: #fff;
     z-index: 19;
 
@@ -55,9 +112,10 @@
         position: absolute;
         display: flex;
         left: 80px;
-        overflow: auto;
+        overflow-x: scroll;
+        overflow-y: auto;
         padding-bottom: 5px;
-        top: 36px;
+        top: 95px;
         width: calc(100% - 90px);
         right: 0;
       }
@@ -74,7 +132,7 @@
         float: left;
         position: relative;
         padding-bottom: 20px;
-        overflow: hidden;
+        border-right: 0.5px solid lightgrey;
         .surgical-block {
           width: calc(100% - 10px);
           position: absolute;
@@ -242,14 +300,17 @@
     }
     .surgicalblock-patientname {
       font-weight: 600;
-      color: #000;
+      color: #5394fc;
       font-size: 14px;
       padding: 0 10px 3px 1px;
+      cursor: pointer;
     }
-    p {
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
+    .ot-day-text{
+      p {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        padding: 2px 0;
+      }
     }
   }
   .surgicalblock-surgeon-name {
@@ -306,4 +367,10 @@
     padding: 0.3%;
     border-radius: 4px;
     position: absolute;
+    z-index: 20;
+}
+hr{
+  border: 0;
+  border-bottom: 1px solid #ddd;
+  margin-top: 15px;
 }

@@ -1,12 +1,12 @@
 'use strict';
 
 describe('loginController', function () {
-    var localeService, $aController, rootScopeMock, window, $q, state, _spinner, initialData, scopeMock, sessionService, $bahmniCookieStore, currentUser, auditLogService;
+    var localeService, $aController, rootScopeMock, $window, $q, state, _spinner, initialData, scopeMock, sessionService, $bahmniCookieStore, currentUser, auditLogService;
 
     beforeEach(module('bahmni.home'));
 
     beforeEach(function () {
-        localeService = jasmine.createSpyObj('localeService', ['getLoginText', 'allowedLocalesList', 'serverDateTime', 'getLocalesLangs']);
+        localeService = jasmine.createSpyObj('localeService', ['getLoginText', 'allowedLocalesList', 'serverDateTime', 'getLocalesLangs', 'defaultLocale']);
         sessionService = jasmine.createSpyObj('sessionService', ['loginUser', 'loadCredentials', 'updateSession']);
         auditLogService = jasmine.createSpyObj('auditLogService', ['log']);
         currentUser = jasmine.createSpyObj('currentUser', ['addDefaultLocale', 'toContract']);
@@ -24,17 +24,19 @@ describe('loginController', function () {
         localeService.getLocalesLangs.and.returnValue(specUtil.createFakePromise(
             {locales: [{code: "en", nativeName: "English"}, {code: "es", nativeName: "Español"}]
             }));
+        localeService.defaultLocale.and.returnValue(specUtil.simplePromise({data: "en"}));
         $bahmniCookieStore = jasmine.createSpyObj('$bahmniCookieStore', ['get', 'remove', 'put']);
         $bahmniCookieStore.get.and.callFake(function () { return {}; });
+        $window = jasmine.createSpyObj('$window', ['location']);
+        $window.location.and.callFake(function () { return {}; });
         initialData = {location: " "};
         _spinner.forPromise.and.returnValue(specUtil.simplePromise({}));
     });
 
     beforeEach(
-        inject(function ($controller, $rootScope, $window, $state, _$q_) {
+        inject(function ($controller, $rootScope, $state, _$q_) {
             $aController = $controller;
             rootScopeMock = $rootScope;
-            window = $window;
             $q = _$q_;
             state = $state;
             scopeMock = rootScopeMock.$new();
@@ -54,7 +56,8 @@ describe('loginController', function () {
             localeService: localeService,
             sessionService: sessionService,
             auditLogService: auditLogService,
-            $bahmniCookieStore: $bahmniCookieStore
+            $bahmniCookieStore: $bahmniCookieStore,
+            $window : $window
         });
     };
 
@@ -146,4 +149,19 @@ describe('loginController', function () {
         loginController();
         expect(scopeMock.locales).toEqual([{code: 'it', nativeName: 'it'}]);
     });
+
+    it ("should fetch bahmniCore data and assign it to windows object ",function() {
+            loginController();
+            var fakeHttpGetPromise = {
+                then: function (success, failure) {
+                    success({currentProvider : {uuid: "providerUuid"}});
+                }
+            };
+            scopeMock.loginInfo = { username: 'superman' };
+            sessionService.loginUser.and.returnValue(fakeHttpGetPromise);
+            $bahmniCookieStore.get.and.returnValue("/ipd");
+            scopeMock.login();
+            expect($bahmniCookieStore.get).toHaveBeenCalled();
+            expect($bahmniCookieStore.get.calls.count()).toBe(2);
+    }); 
 });
